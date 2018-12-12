@@ -610,7 +610,7 @@ public class JModCreateMojo
             argsFile.println( getPlatformSeparatedList( configList ) );
         }
 
-        if ( mainClass != null && !mainClass.isBlank() )
+        if ( mainClass != null && !mainClass.trim().isEmpty() )
         {
             argsFile.println( "--main-class" );
             argsFile.println( mainClass );
