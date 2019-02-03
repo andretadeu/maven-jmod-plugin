@@ -64,7 +64,8 @@ public class JModCreateMojo
 {
     private static final String JMODS = "jmods";
 
-    private List<String> classpathElements;
+    // private List<String> classpathElements;
+    private File classPathElement;
 
     private List<String> modulepathElements;
 
@@ -438,7 +439,7 @@ public class JModCreateMojo
             hasModuleDescriptor = true;
         }
 
-        Collection<File> dependencyArtifacts = getCompileClasspathElements( getProject() );
+        List<File> dependencyArtifacts = getCompileClasspathElements( getProject() );
 
         if ( hasModuleDescriptor )
         {
@@ -447,7 +448,7 @@ public class JModCreateMojo
             // you cannot depend on this project and so it won't be distributed.
 
             modulepathElements = new ArrayList<String>();
-            classpathElements = new ArrayList<String>();
+            //classpathElements = new ArrayList<String>();
 
             ResolvePathsResult<File> resolvePathsResult;
             try
@@ -488,11 +489,7 @@ public class JModCreateMojo
                     }
                 }
 
-                for ( File file : resolvePathsResult.getClasspathElements() )
-                {
-                    getLog().debug( "classpathElements: File: " + file.getPath() );
-                    classpathElements.add( file.getPath() );
-                }
+                classPathElement = targetClassesDirectory;
 
                 for ( File file : resolvePathsResult.getModulepathElements().keySet() )
                 {
@@ -509,10 +506,10 @@ public class JModCreateMojo
         {
             modulepathElements = Collections.emptyList();
 
-            classpathElements = new ArrayList<String>();
-            for ( File file : dependencyArtifacts )
+            // Here I'm establishing the rule that the first dependency goes to the --class-path
+            if ( ! dependencyArtifacts.isEmpty() )
             {
-                classpathElements.add( file.getPath() );
+                classPathElement = dependencyArtifacts.get( 0 );
             }
         }
     }
@@ -537,24 +534,10 @@ public class JModCreateMojo
             argsFile.println( "--module-version" );
             argsFile.println( moduleVersion );
         }
-
-        List<String> classPaths;
-        if ( classpathElements != null )
-        {
-            classPaths = new ArrayList<>( classpathElements );
-        }
-        else
-        {
-            classPaths = new ArrayList<>( 1 );
-        }
-        if ( targetClassesDirectory.exists() )
-        {
-            classPaths.add( targetClassesDirectory.getAbsolutePath() );
-        }
         
         argsFile.println( "--class-path" );
         argsFile .append( '"' )
-                 .append( getPlatformSeparatedList( classPaths ).replace( "\\", "\\\\" ) ) 
+                .append( classPathElement.getAbsolutePath() )
                  .println( '"' );
 
         if ( excludes != null && !excludes.isEmpty() )
